@@ -1,0 +1,998 @@
+---
+title: "IDS572 Assignment2"
+author: "Yaze Gao, Shixun Jiang, Kritika Raghuwanshi"
+date: "2023-02-18"
+output: 
+  pdf_document:
+    latex_engine: xelatex
+header-includes:
+- \usepackage{sectsty} \sectionfont{\centering}
+---
+
+# Problem 1
+
+### Do not use R to answer this question. The following table contains data from an employee database. The database includes the status, department, age range and salary of each employee. This problem asks you to learn a Näıve Bayes classifier for predicting the employee status.
+
+### (a) Use your näıve Bayes classifier, predict the status for two instances A={Marketing, 31-35, 46K-50K} and B={Sales, 31-35, 66K-70K}.
+
+### A={Marketing, 31-35, 46K-50}
+P（status=Senior|A)=P(A|status=Senior)*P(status=Senior)/P(A)
+P（status=Junior|A)=P(A|status=Junior)*P(status=Junior)/P(A)
+
+P（status=Senior)=5/11=0.455
+P（status=Junior)=6/11=0.545
+
+Calculating conditional probabilities
+P（Marketing｜status=Senior）=1/5=0.2
+P（Marketing｜status=Junior）=1/6=0.167
+
+P（31-35｜status=Senior）=1/5=0.2
+P（31-35｜status=Junior）=2/6=0.333
+
+P（46K-50K｜status=Senior）=2/5=0.4
+P（46K-50K｜status=Junior）=1/6=0.167
+
+P(A|status=Senior)=0.2* 0.2* 0.4=0.016
+P(A|status=Junior)=0.167* 0.333* 0.167=0.009
+
+P(A|status=Senior)* P（status=Senior)=0.016* 0.455=0.00782
+P(A|status=Junior)* P(status=Junior)=0.009* 0.545=0.0049
+
+         0.00782   >0.0049
+Thus for A={Marketing, 31-35, 46K-50}, according to the naive Bayesian classifier, status=Senior.
+
+\newpage
+
+### B={Sales, 31-35, 66K-70K}
+P（status=Senior|B)=P(B|status=Senior)*P(status=Senior)/P(B)
+P（status=Junior|B)=P(B|status=Junior)*P(status=Junior)/P(B)
+
+P（status=Senior)=5/11=0.455
+P（status=Junior)=6/11=0.545
+
+Calculating conditional probabilities
+P（Sales｜status=Senior）=1/5=0.2
+P（Sales｜status=Junior）=2/6=0.333
+
+P（31-35｜status=Senior）=1/5=0.2
+P（31-35｜status=Junior）=2/6=0.333
+
+P（66K-70K｜status=Senior）=2/5=0.4
+P（66K-70K｜status=Junior）=1/6=0.167
+
+P(B|status=Senior)=0.2* 0.2* 0.4=0.016
+P(B|status=Junior)=0.333* 0.333* 0.167=0.019
+
+P(B|status=Senior)* P（status=Senior)=0.016* 0.455=0.00782
+P(B|status=Junior)* P(status=Junior)=0.019* 0.545=0.010
+
+         0.00782   <0.01
+Thus for B={Sales, 31-35, 66K-70K}, according to the naive Bayesian classifier, status=Junior.
+
+\newpage
+
+### (b) Suppose we add another feature called “SalaryDuplicate”, which takes on the same value as “Salary” for all training examples. What are the prediction results for the above two instances, if we train a na ̈ıve Bayes classifier on the same dataset with this extra feature? Justify your observations.
+
+ForA
+P(A|status=Senior)=0.2* 0.2* 0.4* 0.4=0.0064
+P(A|status=Junior)=0.167* 0.333* 0.167* 0.167=0.0015
+
+P(A|status=Senior)* P（status=Senior)=0.0064* 0.455=0.0029
+P(A|status=Junior)* P(status=Junior)=0.0015* 0.545=0.0008
+
+After we add another feature called “SalaryDuplicate”,for A status=senior
+
+For B
+P(B|status=Senior)=0.2* 0.2* 0.4* 0.4=0.0064
+P(B|status=Junior)=0.333* 0.333* 0.167* 0.167=0.003
+
+P(B|status=Senior)* P（status=Senior)=0.0064* 0.455=0.0029
+P(B|status=Junior)* P(status=Junior)=0.003* 0.545=0.0016
+
+After we add another feature called “SalaryDuplicate”,for B status=senior
+
+I think the calculation needs to be done from new after adding a feature.
+
+\newpage
+
+\sectionfont{\centering}
+# Problem 2
+
+### (Decision tree in R) One of the challenges in marketing is identifying a set of customers who are most likely to respond to the marketing campaigns. Data science and machine learning systems can help companies to identify such customers. In this question, we will analyze a bank data and build a decision tree model to predict the outcome of the campaign held by the bank, namely whether the client has subscribed to a term deposit. To do so, download the “Bank” data set from Blackboard. This data set contains information about over 41000 observations, including variables about a bank’s clients, data related to the previous and current campaigns held by the bank, and social and economic context attributes present at a particular time.
+
+**Import data through "Environment-Import Dataset-From Text(base)"**
+
+```{r}
+Bank <- read.csv("C:/Bank.csv", sep=";")
+View(Bank)
+```
+
+\newpage
+
+### (a) Before thinking about modeling, have a look at your data. Try to understand the variables’ distributions and their relationships with the target variable. Which variables do you think could be major predictors of the target variable? Also, clean your data appropriately: Are there highly correlated variables? Are there any missing values or outliers? If yes, how do you handle them?
+
+First we need change character variable to factor.
+```{r}
+fac <- c('y', 'poutcome', 'default', 'month')
+Bank[, fac] <- lapply(Bank[, fac],factor)
+summary(Bank)
+```
+
+\newpage
+
+Then we checking the missing values. The result shows there is no missing values.
+```{r}
+sum(is.na(Bank))
+```
+
+The first variable that we believe is most likely to be associated with whether or not to purchase a product is balance, where customers with more balance have more money at their disposal and therefore are likely to be associated with whether or not to purchase a deposit. The second variable is duration, where the longer the conversation with the bank staff, the more interested the customer is in the product. The third variable is campign, the more contact with the customer and the more opportunities to communicate with the customer, the more likely to impress the customer. The last variable is poutcome. the results of the last marketing campaign can easily influence the customer's trust in the product.
+
+\newpage
+
+### (b) Create a decision tree (using “information” for splits) to its full depth. How many leaves are in this tree?
+
+First using sample() function separate the training data and testing data. We chose 70% training values and 30% testing values.
+```{r}
+indx<-sample(2,45211,replace = T ,prob = c(0.7,0.3))
+train_Bank<-Bank[indx==1,]
+test_Bank<-Bank[indx==2,]
+```
+Then use 'rpart' package to creat decision tree.
+```{r}
+library(rpart)
+tree_model1<-rpart(formula = y~.,data = train_Bank,
+          parms = list(split = "information"))
+```
+Use 'rpart.plot' package to plot the tree.
+```{r}
+library(rpart.plot)
+rpart.plot(tree_model1,type = 2)
+print(tree_model1)
+```
+The tree has a total of 13 nodes, of which there are 7 leaf nodes and 5 child nodes.
+
+\newpage
+
+### (c) What are the major predictors of diagnosis suggested by your tree? Please justify your reasoning. Do these major predictors are the same as the ones you observed in part (a)?
+
+The main segmentation is based on duration. duration of the last contact, and poutcome. outcome of the previous marketing campaign. this is similar to our prediction in (a), most people who have a short contact time prove that they are not interested in the product, so most of the people with little contact time People are also judged based on the outcome of their last purchase, so a small percentage of people with short contact times end up choosing yes because they have bought the product before.
+
+\newpage
+
+### (d) Give two strong rules describing who will likely subscribe to a term deposit. Please justify your choices.
+
+1.People who have been in contact for a long time are more likely to buy deposits.I creat a bar chart to prove it.
+```{r}
+library(ggplot2)
+ggplot(data = Bank) +
+  geom_bar(mapping = aes(x= duration, fill= y))
+```
+Customers who were successful as a result of the last marketing campaign were more inclined to buy the product.The histogram below shows that the percentage of customers who chose yes for the last influence campaign as a success was much higher than in other cases.
+```{r}
+ggplot(data = Bank) +
+  geom_bar(mapping = aes(x=  poutcome, fill= y))
+```
+
+\newpage
+
+### (e) What is the accuracy of your decision tree model on the training data? What is the accuracy of this model on the test data?
+
+```{r}
+
+tree_pred_prob1 <- predict(tree_model1, train_Bank, type = "prob")
+tree_pred_class1 <- predict(tree_model1, train_Bank, type = "class")
+```
+
+```{r}
+testerror_train <- mean(tree_pred_class1 != train_Bank$y)
+print(testerror_train)
+```
+Error rate of our decision tree model on train data is 0.0994128
+
+```{r}
+tree_pred_test1 <- predict(tree_model1, test_Bank, type = "class")
+testerror_test1 <- mean(tree_pred_test1 != test_Bank$y)
+print(testerror_test1)
+```
+Error rate of our decision tree model on test data is 0.1004802
+
+
+```{r}
+t1 <- table(tree_pred_test1, test_Bank$y)
+acc1 <- sum(diag(t1))/nrow(test_Bank)*100
+print(acc1)
+```
+We calculated the accuracy of model one is 89.95198.
+
+\newpage
+
+### (f) Construct the “best possible” decision tree to predict the Y labels. Explain how you construct such a tree and how you evaluate its performance.
+
+\sectionfont{\centering}
+# Tree model2
+
+```{r}
+tree_model2 <- rpart(y ~ ., train_Bank,
+                     parms = list(split = "gini"))
+```
+```{r}
+
+tree_pred_prob2 <- predict(tree_model2, train_Bank, type = "prob")
+tree_pred_class2 <- predict(tree_model2, train_Bank, type = "class")
+
+testerror_train2 <- mean(tree_pred_class2 != train_Bank$y)
+print(testerror_train2)
+```
+
+```{r}
+tree_pred_test2 <- predict(tree_model2, test_Bank, type = "class")
+testerror_test2 <- mean(tree_pred_test2 != test_Bank$y)
+print(testerror_test2)
+```
+
+```{r}
+t2 <- table(tree_pred_test2, test_Bank$y)
+acc2 <- sum(diag(t2))/nrow(test_Bank)*100
+print(acc2)
+```
+We calculated the accuracy of model two is 90.00369
+
+\newpage
+
+\sectionfont{\centering}
+# Tree model3
+
+```{r}
+ tree_model3<- rpart(formula = y~., data = test_Bank,  
+parms =list(split="information"),  
+control = rpart.control(minbucket = 3, minsplit = 5))  
+```
+
+
+```{r}
+tree_pred_prob3 <- predict(tree_model3, train_Bank, type = "prob")
+tree_pred_class3 <- predict(tree_model3, train_Bank, type = "class")
+
+testerror_train3 <- mean(tree_pred_class3 != train_Bank$y)
+print(testerror_train3)
+```
+
+```{r}
+tree_pred_test3 <- predict(tree_model3, test_Bank, type = "class")
+testerror_test3 <- mean(tree_pred_test3 != test_Bank$y)
+print(testerror_test3)
+```
+
+```{r}
+t3 <- table(tree_pred_test3, test_Bank$y)
+acc3 <- sum(diag(t3))/nrow(test_Bank)*100
+print(acc3)
+```
+We calculated the accuracy of model three is 90.43221
+After calculating the accuracy rate model 3 has the highest accuracy rate, so I choose model 3 as my best model.
+
+\newpage
+
+### (g) Plot your final decision tree model and write down all decision rules that you will consider for predictions.
+
+```{r}
+rpart.plot(tree_model3)
+```
+A small percentage of users whose last contact was shorter than 467 would simply choose no. A small percentage of users whose last marketing was successful would choose yes, which is 2%. There are 4% of people who have had a successful last marketing campaign who will choose no. Those with a contact time greater than 467 will be divided into two categories. Those with contact time greater than 802 all chose yes. those with contact time between 467 and 802 would make a second choice based on the results of their last campaign. 9% would choose no.
+
+\newpage
+
+\sectionfont{\centering}
+# Problem 3
+
+\sectionfont{\centering}
+# Importing the Data Set
+
+A. In order to do explanatory analysis and construct a decision tree for the Heart data set, I first imported the .csv file into a vector / data frame called heart. After that, I converted the data frame into a tibble for better representation
+
+```{r heart}
+library(readr)
+library(tibble)
+heart <- read.csv("C:/Heart.csv")
+attach(heart)
+heart <- as_tibble(heart)
+print(heart, n=2)
+```
+
+\newpage
+
+\sectionfont{\centering}
+# Understanding the Data and Data Manipulation
+
+Apart from the two variables "id" and "dataset", which are not contributing to our overall analysis, this data set has both *numeric* and *non-numeric* variables as follows:
+
+```{r}
+library(knitr)
+tbl <- data.frame(
+  VariableName = c("age", "sex", "cp", "trestbps", "chol", "fbs", "restecg",
+                     "thalch", "exang", "oldpeak", "slope", "ca", "thal",
+                    "num"),
+  VariableType = c("Numeric", "Non-Numeric", "Non-Numeric", "Numeric"
+                   , "Numeric", "Non-Numeric", "Non-Numeric"
+                   ,"Numeric", "Non-Numeric", "Numeric"
+                   , "Non-Numeric", "Numeric", "Non-Numeric", "Numeric")
+)
+kable(tbl)
+```
+
+\newpage
+
+The **"num"** variable is actually our target variable, which we need to use for classification further. However, since this is numerical, with 5 different values from 0 to 4. We introduced a new *binary* variable called **"target"**, which will have 0 for num = 0 and 1 for num = 1, 2, 3, or 4. While introducing the **"target"** variable, we also give it labels for detection of heart disease. For example, if the value in this variable is 0, we say there's **"Absence"** of heart disease, whereas if it's 1, we say there's **"Presence"** of heart disease. Once we have a new variable called "target", we need to remove the **"num"** variable from the data set, to keep it to 14 variables. To do this, we simply remove the variable at the 14th index, as shown in the code chunk below:
+
+```{r}
+heart$target <- as.factor(ifelse(num > 0, "Presence", "Absence"))
+heart <- heart[,-16]
+print.data.frame(head(heart, n=3))
+```
+
+Some other variables can also be converted to factor for ease, for which we have used the lapply function:
+
+```{r}
+heart[c("sex", "cp", "fbs", "restecg", "exang", "slope", "ca",
+"thal")] <- lapply(heart[c("sex", "cp", "fbs", "restecg", "exang"
+, "slope", "ca", "thal")], factor)
+print(heart, n=2)
+```
+
+\newpage
+
+\sectionfont{\centering}
+# Cleaning the Data Set
+
+We notice that while the problem statement above suggests that this data set has **303 observations**, we're actually seeing **920 observations** overall, so in order to check why that is the case, we look at the summary of this data set:
+
+```{r}
+summary(heart)
+```
+
+\newpage
+
+Upon closer inspection, we can see that many variables have "NA" values within them, which is being displayed by the summary function above. This means we have a lot of data which is either missing or doesn't pertain to the overall evaluation. To clean the data, we need to remove the "NA" values from the data set, for which we can use the omit function as follows:
+
+```{r}
+heart <- na.omit(heart)
+dim(heart)
+```
+
+As mentioned above, out of the 16 variables, the 2 variables called "id" and "dataset" don't contribute anything to our overall study. In order to remove these columns, we use their indices, so 1 for "id" and 3 for "dataset". The following commands were used to remove them:
+
+```{r}
+heart <- heart[, -1]
+heart <- heart[, -3]
+```
+
+After the above step, our working data set is as follows:
+
+```{r}
+str(heart)
+```
+
+\newpage
+
+\sectionfont{\centering}
+# Explanatory Analysis
+
+Now that we have imported, cleaned, and manipulated the data, we can dive further into some analysis of the data set and how certain variables stack up against each other, for example, what are the chances of heart disease with respect to age etc.
+
+First up, we can check the distribution of variable **"target"**, which tells us about the presence or absence of heart disease in an individual. For this, we make use of the table function and then plot the same using ggplot histogram:
+
+```{r}
+library(ggplot2)
+table(heart$target)
+ggplot(heart, aes(target, fill = target)) + geom_histogram(stat = "count") + theme_bw()
+```
+
+Based on the above histogram and frequency distribution, we see that there's an almost equal split between individuals who have heart disease and those who don't, with the absence of heart disease being slightly higher at **163** compared to presence at **140**
+
+\newpage
+
+Now that we've seen the distribution of the target variable, we can analyze it against factors like age, where it would be good to know what age groups are likely to get heart disease and vice versa. For that, we will use a ggplot histogram of target with respect to (w.r.t) age variable
+
+```{r}
+ggplot(heart, aes(x = age, fill = target, color = target)) + 
+geom_histogram(binwidth = 2, color="black") + 
+labs(x = "Age", title = "Heart Disease v/s Age")
+```
+
+This distributions shows us that broader *age groups 55 to 65 have higher chances* of getting heart disease compared to age groups above age 68.
+
+\newpage
+
+Similarly, if we want to understand the risk of heart disease w.r.t gender (Male / Female), we can look at the following distribution:
+
+```{r}
+library(lattice)
+heart %>% histogram(~target | sex, data= ., main = "Risk of Heart Disease w.r.t Gender")
+```
+Here we can see the proportion of presence of heart disease in females is much lower (~25%) compared to proportion of presence of heart disease among males (approximately 50%).
+
+\newpage
+
+We observe that there's a variable called **"cp"**, which refers to chest pain, so in order to see the distribution of chest pain, we can use the table function and then display it in form of a pie chart, as follows:
+
+```{r}
+library(ggplot2)
+library(plotrix)
+pietable <- table(heart$cp)
+percent <- round(pietable/sum(pietable)*100)
+label1 <- paste(names(pietable),percent)
+label2 <- paste(label1, "%", sep="")
+pie3D(pietable, labels = label2, explode = 0.1, 
+main="Distribution of Chest Pain", radius = 1)
+```
+Here we can see that **48%** of the chest pain cases are asymptomatic, but out of the ones with symptoms, the highest percentage is for non-anginal type chest pains (**28%**), where there's no angina presence.
+
+\newpage
+
+\sectionfont{\centering}
+# Decision Tree Model 1
+
+\sectionfont{\centering}
+# Partition Data into Train and Test Data
+
+In order to build a classification / decision tree, we need to first split our data into train and test data, for which we can take a **70-30** approach, where **70%** of heart data set will be train data and **30%** will be the test data.
+
+```{r}
+set.seed(1) # to ensure we're always getting the same split
+index_heart_model1 <- sample(2, nrow(heart), replace= TRUE, prob = c(0.7, 0.3))
+train_heart_model1 <- heart[index_heart_model1 == 1,  ]
+test_heart_model1 <- heart[index_heart_model1 == 2, ]
+```
+
+\sectionfont{\centering}
+# Classification Tree using default "cp"
+
+We now make use of the rpart package to build the decision tree model, where we first start with the **"target"** variable and compare it against all predictors, by using ~., which refers to input variables. We're also using default cp of 0.01, which means any split that does not reduce the tree's overall complexity by a factor of 0.01, is not attempted. The code for that is as follows:
+
+```{r}
+library(rpart)
+tree_heart_model1_train <- rpart(target ~., train_heart_model1)
+print(tree_heart_model1_train) # to print the decision rules
+```
+
+\newpage
+
+To plot an rpart decision tree we can use the "rpart.plot()" function from "rpart.plot" package:
+```{r, results='asis'}
+library(rpart.plot)
+rpart.plot(tree_heart_model1_train)
+rpart.rules(tree_heart_model1_train)
+```
+
+\newpage
+
+In order to see a more fancier version of rpart.plot, we also have the option of fancyRpartPlot() function, which is part of the rattle library. It can be run as follows:
+
+```{r}
+library(rattle)
+fancyRpartPlot(tree_heart_model1_train, palettes=c("Greens", "Reds"), sub="")
+```
+
+\newpage
+
+To obtain the predicted classes or predicted probabilities we can use the "predict" function.
+```{r}
+tree_heart_pred_prob_model1 <- 
+predict(tree_heart_model1_train, train_heart_model1)
+
+tree_heart_pred_prob_model1 <- 
+predict(tree_heart_model1_train, train_heart_model1, type = "prob")
+
+tree_heart_pred_class_model1 <- 
+predict(tree_heart_model1_train, train_heart_model1, type = "class")
+```
+
+The error rate of the decision tree model on training data:
+
+```{r}
+error_rate_heart_train_model1 <- 
+mean(tree_heart_pred_class_model1 != train_heart_model1$target)
+
+print(error_rate_heart_train_model1)
+```
+
+The error rate of the decision tree model on test data is:
+
+```{r}
+tree_heart_pred_test_model1 <- 
+predict(tree_heart_model1_train, test_heart_model1, type = "class")
+
+base_error_heart_model1 <- 
+mean(tree_heart_pred_test_model1 != test_heart_model1$target)
+
+print(base_error_heart_model1)
+```
+
+\newpage
+
+\sectionfont{\centering}
+# Fully Grown Decision Tree (cp=0, split = "information")
+
+```{r}
+tree_heart_model1 <- rpart(target ~ ., train_heart_model1, 
+parms = list(split = "information"), 
+control = rpart.control(minbucket = 0, minsplit = 0, cp = 0))
+rpart.plot(tree_heart_model1)
+
+pred_heart_test_model1 <- 
+predict(tree_heart_model1, test_heart_model1, type = "class")
+
+error_preprun_heart_model1 <- 
+mean(pred_heart_test_model1 != test_heart_model1$target)
+```
+
+\newpage
+
+\sectionfont{\centering}
+# Selecting the Best CP
+
+The CP table allows you to see what's the best decision tree that would help you minimize the misclassification error.
+
+```{r}
+printcp(tree_heart_model1)
+mincp_i_heart_model1 <- which.min(tree_heart_model1$cptable[, 'xerror'])
+```
+
+\newpage
+
+## To get the best cp, we can use two approaches:
+
+\sectionfont{\centering}
+### Approach 1
+
+Here we use the above calculated mincp_i value and find the row (index) corresponding to the min xerror:
+
+```{r}
+optCP_heart_model1 <- tree_heart_model1$cptable[mincp_i_heart_model1, "CP"]
+```
+
+### Approach 2
+
+We calculate the optimal xerror by adding min_xerror + min_xstd, which we do as follows:
+
+```{r}
+optError_heart_model1 <- 
+tree_heart_model1$cptable[mincp_i_heart_model1, "xerror"]
++ tree_heart_model1$cptable[mincp_i_heart_model1, "xstd"]
+```
+
+After this, we find the row(index) of the xerror value which is closest to optError calculated above, using the following code:
+
+```{r}
+optCP_i_heart_model1 <- 
+which.min(abs( tree_heart_model1$cptable[,"xerror"] - optError_heart_model1))
+```
+
+Finally, to get the best CP, we find the cp value corresponding to optCP_i calculated above:
+
+```{r}
+optCP_heart_model1 <- tree_heart_model1$cptable[optCP_i_heart_model1, "CP"]
+print(optCP_heart_model1)
+```
+
+\newpage
+
+Now that we've gotten the best cp value, we can proceed with pruning our decision tree and calculate the accuracy of the decision tree, as follows:
+
+```{r}
+model1_heart_pruned  <- prune(tree_heart_model1, cp = optCP_heart_model1)
+
+test_heart_model1$pred <- 
+predict(model1_heart_pruned, test_heart_model1, type = "class")
+
+error_postprun_heart_model1 <- 
+mean(test_heart_model1$pred != test_heart_model1$target)
+
+df_heart_model1 <- 
+data.frame(base_error_heart_model1, 
+error_preprun_heart_model1, error_postprun_heart_model1)
+
+base_error_pct_heart_model1 <- 
+paste(round(base_error_heart_model1*100, 3), "%", sep = "")
+
+error_preprun_pct_heart_model1 <- 
+paste(round(error_preprun_heart_model1*100, 3), "%", sep = "")
+
+error_postprun_pct_heart_model1 <- 
+paste(round(error_postprun_heart_model1*100, 3), "%", sep = "")
+
+df_percent_heart_model1 <- 
+data.frame(base_error_pct_heart_model1, 
+error_preprun_pct_heart_model1, error_postprun_pct_heart_model1)
+```
+Error rate and error percentage for base_error, error before pruning, and error after pruning are as follows:
+
+```{r}
+kable(df_heart_model1)
+kable(df_percent_heart_model1)
+```
+
+\newpage
+
+\sectionfont{\centering}
+# Decision Tree Model 2
+
+\sectionfont{\centering}
+# Partition Data into Train and Test Data
+
+In order to build a classification / decision tree, we need to first split our data into train and test data, for which we can take a **80-20** approach, where **80%** of heart data set will be train data and **20%** will be the test data.
+
+```{r}
+set.seed(1) # to ensure we're always getting the same split
+index_heart_model2 <- sample(2, nrow(heart), replace= TRUE, prob = c(0.8, 0.2))
+train_heart_model2 <- heart[index_heart_model2 == 1,  ]
+test_heart_model2 <- heart[index_heart_model2 == 2, ]
+```
+
+\sectionfont{\centering}
+# Classification Tree using default "cp"
+
+We now make use of the rpart package to build the decision tree model, where we first start with the **"target"** variable and compare it against all predictors, by using ~., which refers to input variables. We're also using default cp of 0.01, which means any split that does not reduce the tree's overall complexity by a factor of 0.01, is not attempted. The code for that is as follows:
+
+```{r}
+library(rpart)
+tree_heart_model2_train <- rpart(target ~., train_heart_model2)
+print(tree_heart_model2_train) # to print the decision rules
+```
+
+\newpage
+
+To plot an rpart decision tree we can use the "rpart.plot()" function from "rpart.plot" package:
+```{r, results='asis'}
+library(rpart.plot)
+rpart.plot(tree_heart_model2_train)
+rpart.rules(tree_heart_model2_train)
+```
+
+\newpage
+
+In order to see a more fancier version of rpart.plot, we also have the option of fancyRpartPlot() function, which is part of the rattle library. It can be run as follows:
+```{r}
+library(rattle)
+fancyRpartPlot(tree_heart_model2_train, palettes=c("Greens", "Reds"), sub="")
+```
+
+\newpage
+
+To obtain the predicted classes or predicted probabilities we can use the "predict" function.
+```{r}
+tree_heart_pred_prob_model2 <- 
+predict(tree_heart_model2_train, train_heart_model2)
+
+tree_heart_pred_prob_model2 <- predict(tree_heart_model2_train, 
+train_heart_model2, type = "prob")
+
+tree_heart_pred_class_model2 <- predict(tree_heart_model2_train, 
+train_heart_model2, type = "class")
+```
+
+The error rate of the decision tree model on training data:
+
+```{r}
+error_rate_heart_train_model2 <- 
+mean(tree_heart_pred_class_model2 != train_heart_model2$target)
+
+print(error_rate_heart_train_model2)
+```
+
+The error rate of the decision tree model on test data is:
+
+```{r}
+tree_heart_pred_test_model2 <- 
+predict(tree_heart_model2_train, test_heart_model2, type = "class")
+
+base_error_heart_model2 <- 
+mean(tree_heart_pred_test_model2 != test_heart_model2$target)
+
+print(base_error_heart_model2)
+```
+
+\newpage
+
+\sectionfont{\centering}
+# Fully Grown Decision Tree (cp=0, split = "gini")
+
+```{r}
+tree_heart_model2 <- 
+rpart(target ~ ., train_heart_model2, parms = list(split = "gini")
+, control = rpart.control(minbucket = 0, minsplit = 0, cp = 0))
+rpart.plot(tree_heart_model2)
+
+pred_heart_test_model2 <- 
+predict(tree_heart_model2, test_heart_model2, type = "class")
+
+error_preprun_heart_model2 <- 
+mean(pred_heart_test_model2 != test_heart_model2$target)
+```
+
+\newpage
+
+\sectionfont{\centering}
+# Selecting the Best CP
+
+The CP table allows you to see what's the best decision tree that would help you minimize the misclassification error.
+
+```{r}
+printcp(tree_heart_model2)
+mincp_i_heart_model2 <- which.min(tree_heart_model2$cptable[, 'xerror'])
+```
+
+\newpage
+
+## To get the best cp, we can use two approaches:
+
+\sectionfont{\centering}
+### Approach 1
+
+Here we use the above calculated mincp_i value and find the row (index) corresponding to the min xerror:
+
+```{r}
+optCP_heart_model2 <- tree_heart_model2$cptable[mincp_i_heart_model2, "CP"]
+```
+
+### Approach 2
+
+We calculate the optimal xerror by adding min_xerror + min_xstd, which we do as follows:
+
+```{r}
+optError_heart_model2 <- 
+tree_heart_model2$cptable[mincp_i_heart_model2, "xerror"]
++ tree_heart_model2$cptable[mincp_i_heart_model2, "xstd"]
+```
+
+After this, we find the row(index) of the xerror value which is closest to optError calculated above, using the following code:
+
+```{r}
+optCP_i_heart_model2 <- 
+which.min(abs(tree_heart_model2$cptable[,"xerror"] - optError_heart_model2))
+```
+
+Finally, to get the best CP, we find the cp value corresponding to optCP_i calculated above:
+
+```{r}
+optCP_heart_model2 <- tree_heart_model2$cptable[optCP_i_heart_model2, "CP"]
+print(optCP_heart_model2)
+```
+
+\newpage
+
+Now that we've gotten the best cp value, we can proceed with pruning our decision tree and calculate the accuracy of the decision tree, as follows:
+
+```{r}
+model2_heart_pruned  <- prune(tree_heart_model2, cp = optCP_heart_model2)
+
+test_heart_model2$pred <- 
+predict(model2_heart_pruned, test_heart_model2, type = "class")
+
+error_postprun_heart_model2 <- 
+mean(test_heart_model2$pred != test_heart_model2$target)
+
+df_heart_model2 <- 
+data.frame(base_error_heart_model2, error_preprun_heart_model2, 
+error_postprun_heart_model2)
+
+base_error_heart_pct_model2 <- 
+paste(round(base_error_heart_model2*100, 3), "%", sep = "")
+
+error_preprun_heart_pct_model2 <- 
+paste(round(error_preprun_heart_model2*100, 3),
+"%", sep = "")
+
+error_postprun_heart_pct_model2 <- 
+paste(round(error_postprun_heart_model2*100, 3),
+"%", sep = "")
+
+df_percent_heart_model2 <- data.frame(base_error_heart_pct_model2, 
+error_preprun_heart_pct_model2, error_postprun_heart_pct_model2)
+```
+Error rate and error percentage for base_error, error before pruning, and error after pruning are as follows:
+
+```{r}
+kable(df_heart_model2)
+kable(df_percent_heart_model2)
+```
+
+\newpage
+
+\sectionfont{\centering}
+# Decision Tree Model 3
+
+\sectionfont{\centering}
+# Partition Data into Train and Test Data
+
+In order to build a classification / decision tree, we need to first split our data into train and test data, for which we can take a **80-20** approach, where **80%** of heart data set will be train data and **20%** will be the test data.
+
+```{r}
+set.seed(1) # to ensure we're always getting the same split
+index_heart_model3 <- sample(2, nrow(heart), replace= TRUE, prob = c(0.8, 0.2))
+train_heart_model3 <- heart[index_heart_model3 == 1,  ]
+test_heart_model3 <- heart[index_heart_model3 == 2, ]
+```
+
+\sectionfont{\centering}
+# Classification Tree using default "cp"
+
+We now make use of the rpart package to build the decision tree model, where we first start with the **"target"** variable and compare it against all predictors, by using ~., which refers to input variables. We're also using default cp of 0.01, which means any split that does not reduce the tree's overall complexity by a factor of 0.01, is not attempted. The code for that is as follows:
+
+```{r}
+library(rpart)
+tree_heart_model3_train <- rpart(target ~., train_heart_model3)
+print(tree_heart_model3_train) # to print the decision rules
+```
+
+\newpage
+
+To plot an rpart decision tree we can use the "rpart.plot()" function from "rpart.plot" package:
+```{r, results='asis'}
+library(rpart.plot)
+rpart.plot(tree_heart_model3_train)
+rpart.rules(tree_heart_model3_train)
+```
+
+\newpage
+
+In order to see a more fancier version of rpart.plot, we also have the option of fancyRpartPlot() function, which is part of the rattle library. It can be run as follows:
+```{r}
+library(rattle)
+fancyRpartPlot(tree_heart_model3_train, palettes=c("Greens", "Reds"), sub="")
+```
+
+\newpage
+
+To obtain the predicted classes or predicted probabilities we can use the "predict" function.
+```{r}
+tree_heart_pred_prob_model3 <- 
+predict(tree_heart_model3_train, train_heart_model3)
+
+tree_heart_pred_prob_model3 <- predict(tree_heart_model3_train, 
+train_heart_model3, type = "prob")
+
+tree_heart_pred_class_model3 <- predict(tree_heart_model3_train, 
+train_heart_model3, type = "class")
+```
+
+The error rate of the decision tree model on training data:
+
+```{r}
+error_rate_heart_train_model3 <- 
+mean(tree_heart_pred_class_model3 != train_heart_model3$target)
+
+print(error_rate_heart_train_model3)
+```
+
+The error rate of the decision tree model on test data is:
+
+```{r}
+tree_heart_pred_test_model3 <- 
+predict(tree_heart_model3_train, test_heart_model3, type = "class")
+
+base_error_heart_model3 <- 
+mean(tree_heart_pred_test_model3 != test_heart_model3$target)
+
+print(base_error_heart_model3)
+```
+
+\newpage
+
+\sectionfont{\centering}
+# Fully Grown Decision Tree (cp=0, split = "information", minbucket = 3, minsplit = 5)
+
+```{r}
+tree_heart_model3 <- 
+rpart(target ~ ., train_heart_model3, parms = list(split = "information")
+, control = rpart.control(minbucket = 3, minsplit = 5, cp = 0))
+rpart.plot(tree_heart_model3)
+
+pred_heart_test_model3 <- 
+predict(tree_heart_model3, test_heart_model3, type = "class")
+
+error_preprun_heart_model3 <- 
+mean(pred_heart_test_model3 != test_heart_model3$target)
+```
+
+\newpage
+
+\sectionfont{\centering}
+# Selecting the Best CP
+
+The CP table allows you to see what's the best decision tree that would help you minimize the misclassification error.
+
+```{r}
+printcp(tree_heart_model3)
+mincp_i_heart_model3 <- which.min(tree_heart_model3$cptable[, 'xerror'])
+```
+
+\newpage
+
+## To get the best cp, we can use two approaches:
+
+\sectionfont{\centering}
+### Approach 1
+
+Here we use the above calculated mincp_i value and find the row (index) corresponding to the min xerror:
+
+```{r}
+optCP_heart_model3 <- tree_heart_model3$cptable[mincp_i_heart_model3, "CP"]
+```
+
+### Approach 2
+
+We calculate the optimal xerror by adding min_xerror + min_xstd, which we do as follows:
+
+```{r}
+optError_heart_model3 <- 
+tree_heart_model3$cptable[mincp_i_heart_model3, "xerror"]
++ tree_heart_model3$cptable[mincp_i_heart_model3, "xstd"]
+```
+
+After this, we find the row(index) of the xerror value which is closest to optError calculated above, using the following code:
+
+```{r}
+optCP_i_heart_model3 <- 
+which.min(abs(tree_heart_model3$cptable[,"xerror"] - optError_heart_model3))
+```
+
+Finally, to get the best CP, we find the cp value corresponding to optCP_i calculated above:
+
+```{r}
+optCP_heart_model3 <- tree_heart_model3$cptable[optCP_i_heart_model3, "CP"]
+print(optCP_heart_model3)
+```
+
+\newpage
+
+Now that we've gotten the best cp value, we can proceed with pruning our decision tree and calculate the accuracy of the decision tree, as follows:
+
+```{r}
+model3_heart_pruned  <- prune(tree_heart_model3, cp = optCP_heart_model3)
+
+test_heart_model3$pred <- 
+predict(model3_heart_pruned, test_heart_model3, type = "class")
+
+error_postprun_heart_model3 <- 
+mean(test_heart_model3$pred != test_heart_model3$target)
+
+df_heart_model3 <- 
+data.frame(base_error_heart_model3, error_preprun_heart_model3, 
+error_postprun_heart_model3)
+
+base_error_heart_pct_model3 <- 
+paste(round(base_error_heart_model3*100, 3), "%", sep = "")
+
+error_preprun_heart_pct_model3 <- 
+paste(round(error_preprun_heart_model3*100, 3),
+"%", sep = "")
+
+error_postprun_heart_pct_model3 <- 
+paste(round(error_postprun_heart_model3*100, 3),
+"%", sep = "")
+
+df_percent_heart_model3 <- data.frame(base_error_heart_pct_model3, 
+error_preprun_heart_pct_model3, error_postprun_heart_pct_model3)
+```
+Error rate and error percentage for base_error, error before pruning, and error after pruning are as follows:
+
+```{r}
+kable(df_heart_model3)
+kable(df_percent_heart_model3)
+```
+
+\newpage
+
+\sectionfont{\centering}
+# Summary
+
+Based on the calculations and decision tree models we created, we see the following error %:
+
+```{r}
+kable(df_percent_heart_model1)
+kable(df_percent_heart_model2)
+kable(df_percent_heart_model3)
+```
+
+This concludes for us that **model 2, with cp=0, and split="gini" is the best model**, as it's error percentage pre and post pruning is **28.6%** and **18.4%**, which means it predicts the presence or absence of heart disease with approximately **82%** accuracy. post pruning. Models 1 and 3 are both predicting with approximately **77%** and **75%** respectively, post pruning.
